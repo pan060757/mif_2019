@@ -6,6 +6,9 @@ from pandas import DataFrame
 from pandas import concat
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense
@@ -13,7 +16,10 @@ from keras.layers import LSTM
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
-#####转为有监督的学习
+# convert series to supervised learning
+from sklearn.svm import SVR
+
+
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     n_vars = 1 if type(data) is list else data.shape[1]
     df = DataFrame(data)
@@ -95,7 +101,7 @@ values=values.drop(['month','weekday','season','weekday_or_not','holiday_or_not'
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 # specify the number of lag hours
-n_hours = 8
+n_hours = 1
 n_features = 28
 # frame as supervised learning
 reframed = series_to_supervised(scaled, n_hours, 1)
@@ -113,36 +119,33 @@ n_obs = n_hours * n_features
 train_X, train_y = train[:, :n_obs], train[:, -n_features]
 test_X, test_y = test[:, :n_obs], test[:, -n_features]
 print(train_X.shape, len(train_X), train_y.shape)
-# reshape input to be 3D [samples, timesteps, features]
-train_X = train_X.reshape((train_X.shape[0], n_hours, n_features))
-test_X = test_X.reshape((test_X.shape[0], n_hours, n_features))
-print(train_X.shape, train_y.shape, test_X.shape, test_y.shape)
 
 
-######使用LSTM模型
-#####求10次实验的平均值
-# repeats =10
-# error_scores = list()
-###design network
-# for r in range(repeats):
-model = Sequential()
-model.add(LSTM(12, input_shape=(train_X.shape[1], train_X.shape[2])))
-model.add(Dense(1))
-model.compile(loss='mae', optimizer='adam')
-print(model.summary())
-# fit network
-history = model.fit(train_X, train_y, epochs=100, batch_size=72, validation_data=(test_X, test_y), verbose=2,
-                    shuffle=False)
-# plot history
-pyplot.plot(history.history['loss'], label='train',color='red')
-pyplot.plot(history.history['val_loss'], label='test',color='blue')
-pyplot.legend()
-pyplot.show()
+#####SVR回归建模
+# C_range =[0.001,0.01,0.1,1,10,100]
+# gamma_range = [1,2,3,4]
+# param_grid = dict(gamma=gamma_range, C=C_range)
+# cv = KFold(n_splits=5, shuffle=False, random_state=None)
+# svr = GridSearchCV(SVR(kernel='rbf'), param_grid=param_grid, cv=cv)
+# # print(svr.best_params_)
+# ##记录训练时间
+# svr.fit(train_X,train_y) ###拟合模型
+# yhat=svr.predict(test_X)
 
-# make a prediction
-yhat = model.predict(test_X)
-test_X = test_X.reshape((test_X.shape[0], n_hours * n_features))
+#####RandomForest
+rf=RandomForestRegressor()
+parameters = {'n_estimators': [100,200,300,400,500], 'max_features':[4,5,6,7,8,9,10]}
+grid_search = GridSearchCV(estimator=rf,param_grid=parameters, cv=10)
+grid_search.fit(train_X,train_y)
+print("Best score: %0.3f" % grid_search.best_score_)
+print("Best parameters set:")
+best_parameters=grid_search.best_estimator_.get_params()
+for param_name in sorted(parameters.keys()):
+    print("\t%s: %r" % (param_name, best_parameters[param_name]))
+yhat=grid_search.predict(test_X)
+
 # invert scaling for forecast
+yhat=yhat.reshape(len(yhat),1)
 inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
 inv_yhat = scaler.inverse_transform(inv_yhat)
 inv_yhat = inv_yhat[:, 0]
@@ -153,15 +156,7 @@ inv_y = scaler.inverse_transform(inv_y)
 inv_y = inv_y[:, 0]
 # calculate RMSE
 rmse = mean_absolute_percentage_error(inv_y, inv_yhat)
-####将结果写入文件
-out=open("dataset/pre_true.csv","w+")
-for i in range(len(inv_y)):
-    out.write(str(inv_y[i])+','+str(inv_yhat[i])+'\n')
-out.close()
 print('Test RMSE: %.3f' % rmse)
-######
 pyplot.plot(inv_y,label='true_value',color='red')
 pyplot.plot(inv_yhat,label='pre_value',color='blue')
 pyplot.show()
-
-

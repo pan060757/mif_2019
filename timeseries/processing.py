@@ -1,12 +1,15 @@
 #-*-coding:utf-8-*-
 '''
-加入星期特征，以及月份特征，
+加入星期特征，以及月份特征，季度特征，是否工作日，是否节假日
 '''
 from random import randint
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from datetime import datetime
+from chinese_calendar import is_workday, is_holiday
+import chinese_calendar as calendar    # 也可以这样 import
 
 #####生成所有的日期数据
 def getBetweenDate(start,end):
@@ -17,6 +20,17 @@ def getBetweenDate(start,end):
         datestart += timedelta(days=1)
         date.append(datestart.strftime('%Y-%m-%d'))
     return date
+
+#####获得该日期所属季度
+def getSeason(month):
+    if month in range(1,4):
+        return 1
+    elif month in range(4,7):
+        return 2
+    elif month in range(7,10):
+        return 3
+    else:
+        return 4
 
 ####对缺失数据进行插值填充(以其前3天和后3天的均值进行填充)
 def getMissingData(new_data,cur_date):
@@ -71,45 +85,33 @@ for index, row in data.iterrows():
 new_data.index=new_data['date'].tolist()
 ####获取日期集合
 date_set=getBetweenDate("2006-01-03","2016-07-01")
-imputation_data=pd.DataFrame(columns=('date', 'weekday', 'month','group_fees'))
+imputation_data=pd.DataFrame(columns=('date', 'weekday', 'month','season','weekday_or_not','holiday_or_not','group_fees'))
 error_count=0
 i=0
 for date in date_set:
     new_date = datetime.strptime(date, "%Y-%m-%d")
-    weekday = new_date.weekday()  ###判断是星期几
+    day = new_date.weekday()  ###判断是星期几
     month = new_date.month  ###获得对应的月份
+    season=getSeason(month)   ####对应的季度
+    ####判断是否是工作日
+    if(is_workday(new_date)):
+        weekday_or_not=1
+    else:
+        weekday_or_not=0
+    ####判断是否是节假日
+    if(is_holiday(new_date)):
+        holiday_or_not=1
+    else:
+        holiday_or_not=0
+
     if date in new_data['date']:
-        line = [new_date, int(weekday), month, new_data.ix[new_date,'group_fees']]
+        line = [new_date, int(day), month,season,weekday_or_not,holiday_or_not, new_data.ix[new_date,'group_fees']]
     else:
         error_count=error_count+1
         group_fees=getMissingData(new_data,date)
-        line = [new_date, int(weekday), month,group_fees]
+        line = [new_date, int(day), month,season,weekday_or_not,holiday_or_not,group_fees]
     imputation_data.loc[i] = line
     i=i+1
 
 print("缺失天数：%d"%(error_count))
 imputation_data.to_csv('dataset/new_cost_of_month_weekday.csv',index=False)
-###进行缺失值填充
-
-
-
-
-
-# new_data.to_csv('dataset/cost_of_month_weekday.csv',index=False)
-
-import json
-import requests
-###判断是否节假日
-# date = "20180504"
-# server_url = "http://www.easybots.cn/api/holiday.php?d="
-#
-# vop_response = requests.get(server_url+date)
-# print(vop_response.text)
-# if vop_data[date] == '0':
-#     print("this day is weekday")
-# elif vop_data[date] == '1':
-#     print('This day is weekend')
-# elif vop_data[date] == '2':
-#     print('This day is holiday')
-# else:
-#     print('Error')
