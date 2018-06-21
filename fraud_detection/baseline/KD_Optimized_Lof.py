@@ -10,7 +10,7 @@ import time
 from sklearn.neighbors import KDTree
 from joblib import Parallel, delayed
 from matplotlib import pyplot as plt
-from dgen import data_styles
+# from dgen import data_styles
    
 def lof(X, k, outlier_threshold = 1.5, verbose = False):
 
@@ -40,7 +40,7 @@ def lof(X, k, outlier_threshold = 1.5, verbose = False):
         Would get insignificant performance gain."""
     for i, score in enumerate(outlier_score):
         if score > outlier_threshold:
-            outliers.append([X[i], score])
+            outliers.append([i,X[i], score])
 
     if verbose:
         print ("Detected outliers:")
@@ -59,37 +59,36 @@ def data_visualization(X,X_outliers):
         scores.append(pair[1])
 
     X_o = np.vstack(all_outliers)
-    
     plt.scatter(X_o[:,0], X_o[:,1], c='red')
-
     plt.show()
 
 
 def main():
-    """Set K nearest neighbors to look at."""
-    k = 10
-
-    """Test data specificiations."""
-    data_dim = 2
-    num_tests = 10000
-    num_outliers = 2
-
-    mean = [1,1]
-    cov = [[0.3, 0.2],[0.2, 0.2]]
-
-    """Generate test data set.  Couple options here"""
-    X = data_styles.random_clusters(num_tests,num_outliers,data_dim)
-    #X = data_styles.multivariate_normal(num_tests,mean,cov)
-
-    start = time.time()
-    predicted_outliers = lof(X, k, outlier_threshold = 1.75)
-
-    print ("---------------------")
-    print ("Finding outliers in %s values took %s seconds." % (len(X),time.time() - start))
-    print ("---------------------")
-
-    if data_dim == 2:
-        data_visualization(X, predicted_outliers) 
+    pass
+    # """Set K nearest neighbors to look at."""
+    # k = 10
+    #
+    # """Test data specificiations."""
+    # data_dim = 2
+    # num_tests = 1000
+    # num_outliers = 2
+    #
+    # # mean = [1,1]
+    # # cov = [[0.3, 0.2],[0.2, 0.2]]
+    #
+    # """Generate test data set.  Couple options here"""
+    # X = data_styles.random_clusters(num_tests,num_outliers,data_dim)
+    # #X = data_styles.multivariate_normal(num_tests,mean,cov)
+    #
+    # start = time.time()
+    # predicted_outliers = lof(X, k, outlier_threshold = 1)
+    #
+    # print ("---------------------")
+    # print ("Finding outliers in %s values took %s seconds." % (len(X),time.time() - start))
+    # print ("---------------------")
+    #
+    # if data_dim == 2:
+    #     data_visualization(X, predicted_outliers)
 
 if __name__ == "__main__":
     main()

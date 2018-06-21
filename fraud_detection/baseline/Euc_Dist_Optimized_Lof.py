@@ -8,7 +8,7 @@ import numpy as np
 import time
 from sklearn.neighbors import DistanceMetric
 from matplotlib import pyplot as plt
-from dgen import data_styles
+# from dgen import data_styles
 
 """LOF function takes data set and K value and returns predicted outliers. 
    I used http://www.bistaumanga.com.np/blog/lof/ to help me figure out how to 
@@ -17,10 +17,12 @@ def lof(X, k, outlier_threshold = 1.5, verbose = False):
     """Determine nearest neighbors using euclidean distance search."""
     dist = DistanceMetric.get_metric('euclidean').pairwise(X)
     sorted_d = np.argsort(dist, axis=1)
-    k_nearest = sorted_d[:,1 : k + 1] 
+    k_nearest = sorted_d[:,1 : k + 1]
 
+    # get the radius for each point in dataset (distance to kth nearest neighbor)
+    # radius is the distance of kth nearest point for each point in dataset
     """Reachability distance for all points."""
-    radius = np.linalg.norm(X - X[k_nearest[:, -1]], axis = 1) 
+    radius = np.linalg.norm(X - X[k_nearest[:, -1]], axis = 1)
 
     """Local reachability distance computation."""
     LRD = []
@@ -65,27 +67,28 @@ def data_visualization(X,X_outliers):
 
 
 def main():
-    """Set K nearest neighbors to look at."""
-    k = 5
-
-    """Test data specificiations."""
-    data_dim = 2
-    num_tests = 400
-    num_outliers = 2
-
-    mean = [1,1]
-    cov = [[0.3, 0.2],[0.2, 0.2]]
-
-    """Generate test data set.  Couple options here"""
-    X = data_styles.random_clusters(num_tests,num_outliers,data_dim)
-    #X = data_styles.multivariate_normal(num_tests,mean,cov)
-
-    start = time.time()
-    predicted_outliers = lof(X, k, outlier_threshold = 1.75)
-
-    print ("---------------------")
-    print ("Finding outliers in %s values took %s seconds." % (len(X),time.time() - start))
-    print ("---------------------")
+    pass
+    # """Set K nearest neighbors to look at."""
+    # k = 5
+    #
+    # """Test data specificiations."""
+    # data_dim = 2
+    # num_tests = 400
+    # num_outliers = 2
+    #
+    # # mean = [1,1]
+    # # cov = [[0.3, 0.2],[0.2, 0.2]]
+    #
+    # """Generate test data set.  Couple options here"""
+    # X = data_styles.random_clusters(num_tests,num_outliers,data_dim)
+    # # X = data_styles.multivariate_normal(num_tests,mean,cov)
+    #
+    # start = time.time()
+    # predicted_outliers = lof(X, k, outlier_threshold = 1.75)
+    #
+    # print ("---------------------")
+    # print ("Finding outliers in %s values took %s seconds." % (len(X),time.time() - start))
+    # print ("---------------------")
 
     #if data_dim == 2:
         #data_visualization(X, predicted_outliers) 

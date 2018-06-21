@@ -160,9 +160,10 @@ result=result.join(fees)\
     .sortByKey()
 
 
-#####(个人编号,(身份,性质，年龄,性别,年度工资，医疗机构代码，医院等级,住院天数,药品费，起付线，报销比例，是否患有慢性病,入院日期，出院日期，病种，诊疗费、床位费，手术费，护理费、材料费,统筹账户支付))
+#####(个人编号,(身份,性质，年龄,性别,年度工资，医疗机构代码，医院等级,住院天数,药品费，起付线，报销比例，是否患有慢性病,入院日期，出院日期，诊疗费、床位费，手术费，护理费、材料费,统筹账户支付))
 out = open('output/dataOfYZJPTC.csv', 'w+')
 for (key,value) in result.collect():
   line= reduce(lambda a, b: "%s,%s"%(a,b),value).encode("utf-8")
   out.write("%s,%s\n"%(key,line))
 out.close()
+

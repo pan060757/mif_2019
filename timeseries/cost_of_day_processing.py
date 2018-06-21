@@ -84,7 +84,7 @@ for index, row in data.iterrows():
 #####重新设置索引
 new_data.index=new_data['date'].tolist()
 ####获取日期集合
-date_set=getBetweenDate("2006-01-03","2016-07-01")
+date_set=getBetweenDate("2005-12-31","2016-07-01")
 imputation_data=pd.DataFrame(columns=('date', 'weekday', 'month','season','weekday_or_not','holiday_or_not','group_fees'))
 error_count=0
 i=0

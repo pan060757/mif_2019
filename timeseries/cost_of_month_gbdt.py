@@ -6,6 +6,10 @@ from pandas import DataFrame
 from pandas import concat
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense
@@ -13,7 +17,10 @@ from keras.layers import LSTM
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
-#####转为有监督的学习
+# convert series to supervised learning
+from sklearn.svm import SVR
+
+
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     n_vars = 1 if type(data) is list else data.shape[1]
     df = DataFrame(data)
@@ -65,38 +72,19 @@ def fit_lstm(train, batch_size, nb_epoch, neurons):
     return model
 
 # load dataset
-####读入介入星期特征以及月份特征的数据
-data_input= read_csv('dataset/new_cost_of_month_weekday.csv')
-values=data_input[['group_fees','weekday','month','season','weekday_or_not','holiday_or_not']]
-# ensure all data is float
-values = values.astype('float32')
-
-
-##对个别列进行哑变量处理(7个星期特征)
-weekday_dummy=pd.get_dummies(values.weekday,prefix='weekday')
-values=values.join(weekday_dummy)
-#####12个月份特征
-month_dummy=pd.get_dummies(values.month,prefix='month')
-values=values.join(month_dummy)
-#######4个季度特征
-season_dummy=pd.get_dummies(values.season,prefix='season')
-values=values.join(season_dummy)
-#######2个是否工作日特征
-weekday_or_dummy=pd.get_dummies(values.weekday_or_not,prefix='weekday_or_not')
-values=values.join(weekday_or_dummy)
-#######2个是否节假日特征
-holiday_or_dummy=pd.get_dummies(values.holiday_or_not,prefix='holiday_or_dummy')
-values=values.join(holiday_or_dummy)
-
-######剔除原始的特征
-values=values.drop(['month','weekday','season','weekday_or_not','holiday_or_not'],1)
-
+# 加载数据
+data_input= read_csv('dataset/workerCostByMonth.csv', header=None)
+#####
+data_input.columns=['date','total_fees','group_fees','hospital_fees','h_groupfees','menzhen_fees','m_groupfees','hospital_count','menzhen_count','avg_hgroupfees','avg_mgroupfees']
+#####只提取一个特征
+values=data_input['group_fees']
+values=values.reshape(-1,1)
 # normalize features
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 # specify the number of lag hours
-n_hours = 8
-n_features = 28
+n_hours = 1
+n_features = 1
 # frame as supervised learning
 reframed = series_to_supervised(scaled, n_hours, 1)
 print(reframed)
@@ -105,63 +93,65 @@ print(reframed.shape)
 
 # split into train and test sets
 values = reframed.values
-n_train_hours = -90
+n_train_hours = -24
 train = values[:n_train_hours, :]
-test = values[n_train_hours:-30, :]
+test = values[n_train_hours:, :]
 # split into input and outputs
 n_obs = n_hours * n_features
 train_X, train_y = train[:, :n_obs], train[:, -n_features]
 test_X, test_y = test[:, :n_obs], test[:, -n_features]
 print(train_X.shape, len(train_X), train_y.shape)
-# reshape input to be 3D [samples, timesteps, features]
-train_X = train_X.reshape((train_X.shape[0], n_hours, n_features))
-test_X = test_X.reshape((test_X.shape[0], n_hours, n_features))
-print(train_X.shape, train_y.shape, test_X.shape, test_y.shape)
 
+#####n_estimators:80
+# param_test1 = {'n_estimators':range(20,81,10)}
+# gdbt= GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, min_samples_split=300, min_samples_leaf=20,max_depth=8,max_features='sqrt', subsample=0.8,random_state=10), param_grid = param_test1,iid=False,cv=5)
+# gdbt.fit(train_X,train_y)
+# print(gdbt.best_params_)
 
-######使用LSTM模型
-#####求10次实验的平均值
-# repeats =10
-# error_scores = list()
-###design network
-# for r in range(repeats):
-model = Sequential()
-model.add(LSTM(12, input_shape=(train_X.shape[1], train_X.shape[2])))
-model.add(Dense(1))
-model.compile(loss='mae', optimizer='adam')
-print(model.summary())
-# fit network
-history = model.fit(train_X, train_y, epochs=100, batch_size=72, validation_data=(test_X, test_y), verbose=2,
-                    shuffle=False)
-# plot history
-pyplot.plot(history.history['loss'], label='train',color='red')
-pyplot.plot(history.history['val_loss'], label='test',color='blue')
-pyplot.legend()
-pyplot.show()
-
-# make a prediction
-yhat = model.predict(test_X)
-test_X = test_X.reshape((test_X.shape[0], n_hours * n_features))
+###max_depth:13
+param_test2 = {'max_depth':range(3,14,2),'min_samples_split':range(100,801,200)}
+gdbt= GridSearchCV(estimator = GradientBoostingRegressor(n_estimators=80,learning_rate=0.1, min_samples_split=300, min_samples_leaf=20,max_depth=8,max_features='sqrt', subsample=0.8,random_state=10), param_grid = param_test2,iid=False,cv=5)
+gdbt.fit(train_X,train_y)
+print(gdbt.grid_scores_)
+print(gdbt.best_params_)
+# #
+##### min_samples_leaf:60; min_samples_split:800
+# param_test3 = {'min_samples_split':range(800,1900,200), 'min_samples_leaf':range(60,101,10)}
+# gdbt = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, n_estimators=80,max_depth=13, max_features='sqrt', subsample=0.8, random_state=10), param_grid = param_test3,iid=False, cv=5)
+# gdbt.fit(train_X,train_y)
+# print(gdbt.grid_scores_)
+# print(gdbt.best_params_)
+# #
+# ##### max_features:17
+# param_test4 = {'max_features':range(7,20,2)}
+# gdbt = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, n_estimators=80,max_depth=13, min_samples_leaf =60, min_samples_split =800, subsample=0.8, random_state=10), param_grid = param_test4,iid=False, cv=5)
+# gdbt.fit(train_X,train_y)
+# print(gdbt.grid_scores_)
+# print(gdbt.best_params_)
+#
+# ####subsample:0.9
+# param_test5 = {'subsample':[0.6,0.7,0.75,0.8,0.85,0.9]}
+# gdbt = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, n_estimators=80,max_depth=13, min_samples_leaf =60, min_samples_split =800, max_features=17, random_state=10), param_grid = param_test5,iid=False, cv=5)
+# gdbt.fit(train_X,train_y)
+# print(gdbt.grid_scores_)
+# print(gdbt.best_params_)
+#
+# gdbt = GradientBoostingRegressor(learning_rate=0.05, n_estimators=60,max_depth=13, min_samples_leaf =60, min_samples_split =800, max_features=13, subsample=0.9, random_state=10)
+# gdbt.fit(train_X,train_y)
 # invert scaling for forecast
-inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
-inv_yhat = scaler.inverse_transform(inv_yhat)
+yhat = gdbt.predict(test_X)
+yhat=yhat.reshape(len(yhat),1)
+# inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
+inv_yhat = scaler.inverse_transform(yhat)
 inv_yhat = inv_yhat[:, 0]
 # invert scaling for actual
 test_y = test_y.reshape((len(test_y), 1))
-inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
-inv_y = scaler.inverse_transform(inv_y)
+# inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
+inv_y = scaler.inverse_transform(test_y)
 inv_y = inv_y[:, 0]
 # calculate RMSE
 rmse = mean_absolute_percentage_error(inv_y, inv_yhat)
-####将结果写入文件
-out=open("dataset/pre_true.csv","w+")
-for i in range(len(inv_y)):
-    out.write(str(inv_y[i])+','+str(inv_yhat[i])+'\n')
-out.close()
 print('Test RMSE: %.3f' % rmse)
-######
 pyplot.plot(inv_y,label='true_value',color='red')
 pyplot.plot(inv_yhat,label='pre_value',color='blue')
 pyplot.show()
-
-

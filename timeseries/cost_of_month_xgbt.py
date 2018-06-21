@@ -47,37 +47,21 @@ def mean_absolute_percentage_error(y_true, y_pred):
 # load dataset
 ####读入介入星期特征以及月份特征的数据
 if __name__=='__main__':
-    data_input = read_csv('dataset/new_cost_of_month_weekday.csv')
-    values = data_input[['group_fees', 'weekday', 'month', 'season', 'weekday_or_not', 'holiday_or_not', ]]
-    # ensure all data is float
-    values = values.astype('float32')
-
-    ###进行哑变量处理(1+12+7+4+2+2=28)
-    ##对个别列进行哑变量处理(7个星期特征)
-    weekday_dummy = pd.get_dummies(values.weekday, prefix='weekday')
-    values = values.join(weekday_dummy)
-    #####12个月份特征
-    month_dummy = pd.get_dummies(values.month, prefix='month')
-    values = values.join(month_dummy)
-    #######4个季度特征
-    season_dummy = pd.get_dummies(values.season, prefix='season')
-    values = values.join(season_dummy)
-    #######2个是否工作日特征
-    weekday_or_dummy = pd.get_dummies(values.weekday_or_not, prefix='weekday_or_not')
-    values = values.join(weekday_or_dummy)
-    #######2个是否节假日特征
-    holiday_or_dummy = pd.get_dummies(values.holiday_or_not, prefix='holiday_or_dummy')
-    values = values.join(holiday_or_dummy)
-
-    ######剔除原始的特征
-    values = values.drop(['month', 'weekday', 'season', 'weekday_or_not', 'holiday_or_not'], 1)
-
+    # load dataset
+    # 加载数据
+    data_input = read_csv('dataset/workerCostByMonth.csv', header=None)
+    #####
+    data_input.columns = ['date', 'total_fees', 'group_fees', 'hospital_fees', 'h_groupfees', 'menzhen_fees',
+                          'm_groupfees', 'hospital_count', 'menzhen_count', 'avg_hgroupfees', 'avg_mgroupfees']
+    #####只提取一个特征
+    values = data_input['group_fees']
+    values = values.reshape(-1, 1)
     # normalize features
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled = scaler.fit_transform(values)
     # specify the number of lag hours
     n_hours = 1
-    n_features = 28
+    n_features = 1
     # frame as supervised learning
     reframed = series_to_supervised(scaled, n_hours, 1)
     print(reframed)
@@ -85,9 +69,9 @@ if __name__=='__main__':
 
     # split into train and test sets
     values = reframed.values
-    n_train_hours = -90
+    n_train_hours = -24
     train = values[:n_train_hours, :]
-    test = values[n_train_hours:-30, :]
+    test = values[n_train_hours:, :]
     # split into input and outputs
     n_obs = n_hours * n_features
     train_X, train_y = train[:, :n_obs], train[:, -n_features]
@@ -216,23 +200,17 @@ if __name__=='__main__':
     yhat = model.predict(test_X)
     # invert scaling for forecast
     yhat = yhat.reshape(len(yhat), 1)
-    inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
-    inv_yhat = scaler.inverse_transform(inv_yhat)
+    # inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
+    inv_yhat = scaler.inverse_transform(yhat)
     inv_yhat = inv_yhat[:, 0]
     # invert scaling for actual
     test_y = test_y.reshape((len(test_y), 1))
-    inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
-    inv_y = scaler.inverse_transform(inv_y)
+    # inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
+    inv_y = scaler.inverse_transform(test_y)
     inv_y = inv_y[:, 0]
     # calculate RMSE
     rmse = mean_absolute_percentage_error(inv_y, inv_yhat)
     print('Test RMSE: %.3f' % rmse)
-    ####将结果写入文件
-    out = open("dataset/pre_true.csv", "w+")
-    for i in range(len(inv_y)):
-        out.write(str(inv_y[i]) + ',' + str(inv_yhat[i]) + '\n')
-    out.close()
-
     pyplot.plot(inv_y, label='true_value', color='red')
     pyplot.plot(inv_yhat, label='pre_value', color='blue')
     pyplot.show()
@@ -264,27 +242,27 @@ if __name__=='__main__':
     # plot_tree(model,num_trees=0,rankdir='LR')   ####可以刻画树模型
     # plt.show()
     # Fit model using each importance as a threshold
-    thresholds = sort(model.feature_importances_)
-    for thresh in thresholds:
-    # select features using threshold
-            selection = SelectFromModel(model, threshold=thresh, prefit=True)
-            select_X_train = selection.transform(train_X)
-            # train model
-            selection_model = XGBRegressor()
-            selection_model.fit(select_X_train, train_y)
-            # eval model
-            select_X_test = selection.transform(test_X)
-            yhat = selection_model.predict(select_X_test)
-            # invert scaling for forecast
-            yhat = yhat.reshape(len(yhat), 1)
-            inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
-            inv_yhat = scaler.inverse_transform(inv_yhat)
-            inv_yhat = inv_yhat[:, 0]
-            # invert scaling for actual
-            test_y = test_y.reshape((len(test_y), 1))
-            inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
-            inv_y = scaler.inverse_transform(inv_y)
-            inv_y = inv_y[:, 0]
-            # calculate RMSE
-            mape = mean_absolute_percentage_error(inv_y, inv_yhat)
-            print("Thresh=%.3f, n=%d, MAPE: %.2f%%" % (thresh, select_X_train.shape[1], mape))
+    # thresholds = sort(model.feature_importances_)
+    # for thresh in thresholds:
+    # # select features using threshold
+    #         selection = SelectFromModel(model, threshold=thresh, prefit=True)
+    #         select_X_train = selection.transform(train_X)
+    #         # train model
+    #         selection_model = XGBRegressor()
+    #         selection_model.fit(select_X_train, train_y)
+    #         # eval model
+    #         select_X_test = selection.transform(test_X)
+    #         yhat = selection_model.predict(select_X_test)
+    #         # invert scaling for forecast
+    #         yhat = yhat.reshape(len(yhat), 1)
+    #         inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
+    #         inv_yhat = scaler.inverse_transform(inv_yhat)
+    #         inv_yhat = inv_yhat[:, 0]
+    #         # invert scaling for actual
+    #         test_y = test_y.reshape((len(test_y), 1))
+    #         inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
+    #         inv_y = scaler.inverse_transform(inv_y)
+    #         inv_y = inv_y[:, 0]
+    #         # calculate RMSE
+    #         mape = mean_absolute_percentage_error(inv_y, inv_yhat)
+    #         print("Thresh=%.3f, n=%d, MAPE: %.2f%%" % (thresh, select_X_train.shape[1], mape))

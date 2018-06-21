@@ -6,7 +6,7 @@ I adapted the code to make it parallelizable.
 
 from __future__ import division
 import warnings
-from dgen import data_styles
+# from dgen import data_styles
 import time
 import numpy as np
 from joblib import Parallel, delayed
@@ -185,22 +185,23 @@ def data_visualization(X,X_o):
 
 
 def main():
-    num_tests = 100
-    num_outliers = 2
-    data_dim = 2
-    X = data_styles.random_clusters(num_tests,num_outliers,data_dim)
-    X_l = X.tolist()
-    print(X)
-    start = time.time()
-    o = outliers(5,X_l)
-    print ("Computing %s outliers took %s seconds with %s cores." % (num_tests, time.time() - start, cpu_count()))
-    print(o)
-    new_o = []
-    for i, val in enumerate(o):
-        new_o.append(val[0]['instance'])
-
-    print(new_o)
-    data_visualization(X,np.array(new_o))
+    pass
+    # num_tests = 1000
+    # num_outliers = 2
+    # data_dim = 2
+    # X = data_styles.random_clusters(num_tests,num_outliers,data_dim)
+    # X_l = X.tolist()
+    # print(X)
+    # start = time.time()
+    # o = outliers(5,X_l)
+    # print ("Computing %s outliers took %s seconds with %s cores." % (num_tests, time.time() - start, cpu_count()))
+    # print(o)
+    # new_o = []
+    # for i, val in enumerate(o):
+    #     new_o.append(val[0]['instance'])
+    #
+    # print(new_o)
+    # data_visualization(X,np.array(new_o))
 
 if __name__ == "__main__":
     main()

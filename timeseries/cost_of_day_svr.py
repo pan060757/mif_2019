@@ -122,27 +122,15 @@ print(train_X.shape, len(train_X), train_y.shape)
 
 
 #####SVR回归建模
-# C_range =[0.001,0.01,0.1,1,10,100]
-# gamma_range = [1,2,3,4]
-# param_grid = dict(gamma=gamma_range, C=C_range)
-# cv = KFold(n_splits=5, shuffle=False, random_state=None)
-# svr = GridSearchCV(SVR(kernel='rbf'), param_grid=param_grid, cv=cv)
-# # print(svr.best_params_)
-# ##记录训练时间
-# svr.fit(train_X,train_y) ###拟合模型
-# yhat=svr.predict(test_X)
-
-#####RandomForest
-rf=RandomForestRegressor()
-parameters = {'n_estimators': [100,200,300,400,500], 'max_features':[4,5,6,7,8,9,10]}
-grid_search = GridSearchCV(estimator=rf,param_grid=parameters, cv=10)
-grid_search.fit(train_X,train_y)
-print("Best score: %0.3f" % grid_search.best_score_)
-print("Best parameters set:")
-best_parameters=grid_search.best_estimator_.get_params()
-for param_name in sorted(parameters.keys()):
-    print("\t%s: %r" % (param_name, best_parameters[param_name]))
-yhat=grid_search.predict(test_X)
+C_range =[0.001,0.01,0.1,1,10,100]
+gamma_range = [1,2,3,4]
+param_grid = dict(gamma=gamma_range, C=C_range)
+cv = KFold(n_splits=5, shuffle=False, random_state=None)
+svr = GridSearchCV(SVR(kernel='rbf'), param_grid=param_grid, cv=cv)
+# print(svr.best_params_)
+##记录训练时间
+svr.fit(train_X,train_y) ###拟合模型
+yhat=svr.predict(test_X)
 
 # invert scaling for forecast
 yhat=yhat.reshape(len(yhat),1)

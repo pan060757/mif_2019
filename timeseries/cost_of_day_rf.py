@@ -13,13 +13,8 @@ from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
-from sklearn.metrics import mean_squared_error
-from math import sqrt
 
 # convert series to supervised learning
-from sklearn.svm import SVR
-
-
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     n_vars = 1 if type(data) is list else data.shape[1]
     df = DataFrame(data)

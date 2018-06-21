@@ -21,4 +21,4 @@ data_input.columns=['region_num','worker_num','hos_num','hospital_num',
                     'fjbyp_fees','line','ratio','single_fees','group_fees','bbzf_fees',
                     'gwybz_fees','grzf_fees','in_hospital','out_hospital','pay_type',
                     'in_diseaseNum','in_diseaseName','in_diseaseNum','in_diseaseName']
-print(data_input.count())
+print(data_input.groupby(data_input['in_hospital']).size())
