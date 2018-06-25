@@ -1,10 +1,10 @@
 #-*-coding:utf-8-*-
 '''
-药品使用记录-tfidf
+治疗手段使用记录-tfidf
 '''
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
-input=open("dataset/worker_hospital_medicine_processing.csv",encoding="utf-8")
+input=open("dataset/worker_hospital_treatment_processing.csv",encoding="utf-8")
 corpus=[]
 for line in input.readlines():
     lines=line.strip("\n").split(',')
@@ -20,5 +20,4 @@ for i in range(len(weight)):  # 打印每类文本的tf-idf词语权重，第一
     print("-------这里输出第", i, "个样本的词语tf-idf权重------")
     for j in range(len(word)):
         print(word[j], weight[i][j])
-print("所有药物种类：",len(word))
-
+print("所有诊疗种类：",len(word))
