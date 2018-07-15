@@ -20,5 +20,9 @@ for i in range(len(weight)):  # 打印每类文本的tf-idf词语权重，第一
     print("-------这里输出第", i, "个样本的词语tf-idf权重------")
     for j in range(len(word)):
         print(word[j], weight[i][j])
+
+out=open("dataset/yzjptc_drug.txt")
+for i in len(word):
+    out.write(word+'\r')
 print("所有药物种类：",len(word))
 

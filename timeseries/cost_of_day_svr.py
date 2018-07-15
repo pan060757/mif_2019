@@ -95,8 +95,8 @@ holiday_or_dummy=pd.get_dummies(values.holiday_or_not,prefix='holiday_or_dummy')
 values=values.join(holiday_or_dummy)
 
 ######剔除原始的特征
-values=values.drop(['month','weekday','season','weekday_or_not','holiday_or_not'],1)
-
+values = values.drop(['group_fees', 'month', 'weekday', 'season', 'weekday_or_not', 'holiday_or_not'], 1)
+values = values.join(data_input['group_fees'])
 # normalize features
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
@@ -116,8 +116,8 @@ train = values[:n_train_hours, :]
 test = values[n_train_hours:-30, :]
 # split into input and outputs
 n_obs = n_hours * n_features
-train_X, train_y = train[:, :n_obs], train[:, -n_features]
-test_X, test_y = test[:, :n_obs], test[:, -n_features]
+train_X, train_y = train[:, :n_obs], train[:, -1]
+test_X, test_y = test[:, :n_obs], test[:, -1]
 print(train_X.shape, len(train_X), train_y.shape)
 
 
@@ -134,14 +134,14 @@ yhat=svr.predict(test_X)
 
 # invert scaling for forecast
 yhat=yhat.reshape(len(yhat),1)
-inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
+inv_yhat = concatenate((test_X[:, -27:],yhat), axis=1)
 inv_yhat = scaler.inverse_transform(inv_yhat)
-inv_yhat = inv_yhat[:, 0]
+inv_yhat = inv_yhat[:, -1]
 # invert scaling for actual
 test_y = test_y.reshape((len(test_y), 1))
-inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
+inv_y = concatenate((test_X[:, -27:],test_y ), axis=1)
 inv_y = scaler.inverse_transform(inv_y)
-inv_y = inv_y[:, 0]
+inv_y = inv_y[:, -1]
 # calculate RMSE
 rmse = mean_absolute_percentage_error(inv_y, inv_yhat)
 print('Test RMSE: %.3f' % rmse)
