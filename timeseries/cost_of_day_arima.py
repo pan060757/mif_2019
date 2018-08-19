@@ -22,6 +22,7 @@ def mean_absolute_percentage_error(y_true, y_pred):
 def error_rate_computed(y_true, y_pred):
     return (y_true - y_pred) / y_true*100
 
+<<<<<<< HEAD
 
 # init bokeh
 output_notebook()
@@ -57,6 +58,11 @@ def plot_arima(truth, forecasts, title="ARIMA", xaxis_label='Time',
 
 data_input = read_csv('dataset/new_cost_of_month_weekday.csv')
 data= data_input['group_fees']
+=======
+data_input= read_csv('dataset/workerCostByDay.csv', header=None)
+data_input.columns=['date','total_fees','group_fees','hospital_fees','h_groupfees','menzhen_fees','m_groupfees','hospital_count','menzhen_count','avg_hgroupfees','avg_mgroupfees']
+data=data_input['group_fees']
+>>>>>>> 46046854230cec388d86f809dcce566558853598
 ###检测数据的稳定性
 # data.plot()
 # pyplot.show()
@@ -75,6 +81,7 @@ stepwise_fit = auto_arima(train, start_p=1, start_q=1, max_p=2, max_q=2, m=12,
                           suppress_warnings=True,  # don't want convergence warnings
                           stepwise=True)  # set to stepwise
 print(stepwise_fit.summary())
+<<<<<<< HEAD
 # #
 # # # #####预测未来几期的值
 # pre_value = stepwise_fit.predict(n_periods=len(test))
@@ -90,3 +97,20 @@ print(stepwise_fit.summary())
 # pyplot.plot(test)
 # pyplot.plot(pre_value, color='red')
 # pyplot.show()
+=======
+#
+# # #####预测未来几期的值
+pre_value = stepwise_fit.predict(n_periods=len(test))
+print(pre_value)
+for i in range(1,len(pre_value)):
+    print('预测值:%.3f'% pre_value[i])
+
+test_mae = mean_absolute_percentage_error(test, pre_value)
+print('Mean Absolute Percentage Error On Test Set: %.3f' % test_mae)
+error_rate=error_rate_computed(test, pre_value)
+print("测试误差率:",error_rate)
+pyplot.plot(train)
+pyplot.plot(test)
+pyplot.plot(pre_value, color='red')
+pyplot.show()
+>>>>>>> 46046854230cec388d86f809dcce566558853598

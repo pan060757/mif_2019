@@ -27,6 +27,10 @@ buildNumber.properties
 ###过滤数据文件
 *.csv
 *.txt
+*.dat
+*.xls
+*.xlsx
+
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/

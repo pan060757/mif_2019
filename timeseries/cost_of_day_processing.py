@@ -74,11 +74,17 @@ data_input= pd.read_csv('dataset/workerCostByDay.csv', header=None)
 data_input.columns=['date','total_fees','group_fees','hospital_fees','h_groupfees','menzhen_fees','m_groupfees','h_count','m_count','avg_hgroupfees','avg_mgroupfees']
 data=data_input[['date','h_count','h_groupfees','m_count','m_groupfees','group_fees']]
 
+<<<<<<< HEAD
 
 new_data= pd.DataFrame(columns=('date', 'weekday', 'month','season','weekday_or_not','holiday_or_not','h_count','h_groupfees','m_count','m_groupfees','group_fees'))
 i=0
 new_data.index=new_data['date'].tolist()
 flag=False
+=======
+new_data= pd.DataFrame(columns=('date', 'weekday', 'month','season','weekday_or_not','holiday_or_not','h_count','h_groupfees','m_count','m_groupfees','group_fees'))
+i=0
+new_data.index=new_data['date'].tolist()
+>>>>>>> 46046854230cec388d86f809dcce566558853598
 for index, row in data.iterrows():
     date=str(int(row['date']))
     date=date[0:4]+'-'+date[4:6]+'-'+date[6:8]
