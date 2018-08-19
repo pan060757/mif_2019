@@ -1,11 +1,11 @@
 from datetime import datetime
 
 
-# ####判断今天星期几
-# date='2018-06-03'
-# new_date = datetime.strptime(date, "%Y-%m-%d")
-# weekday = new_date.weekday()  ###判断是星期几
-# print(weekday)
+####判断今天星期几
+date='2018-07-23'
+new_date = datetime.strptime(date, "%Y-%m-%d")
+weekday = new_date.weekday()  ###判断是星期几
+print(weekday)
 
 
 import json

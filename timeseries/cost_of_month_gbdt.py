@@ -6,6 +6,7 @@ from pandas import DataFrame
 from pandas import concat
 import pandas as pd
 import numpy as np
+from sklearn import metrics
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
@@ -77,14 +78,12 @@ data_input= read_csv('dataset/workerCostByMonth.csv', header=None)
 #####
 data_input.columns=['date','total_fees','group_fees','hospital_fees','h_groupfees','menzhen_fees','m_groupfees','hospital_count','menzhen_count','avg_hgroupfees','avg_mgroupfees']
 #####只提取一个特征
-values=data_input['group_fees']
-values=values.reshape(-1,1)
+values=data_input[['menzhen_fees','m_groupfees','hospital_count','menzhen_count','group_fees']]
 # normalize features
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 # specify the number of lag hours
-n_hours = 1
-n_features = 1
+n_hours = 2
 # frame as supervised learning
 reframed = series_to_supervised(scaled, n_hours, 1)
 print(reframed)
@@ -97,9 +96,8 @@ n_train_hours = -24
 train = values[:n_train_hours, :]
 test = values[n_train_hours:, :]
 # split into input and outputs
-n_obs = n_hours * n_features
-train_X, train_y = train[:, :n_obs], train[:, -n_features]
-test_X, test_y = test[:, :n_obs], test[:, -n_features]
+train_X, train_y = train[:, :-5], train[:, -1]
+test_X, test_y = test[:, :-5], test[:, -1]
 print(train_X.shape, len(train_X), train_y.shape)
 
 #####n_estimators:80
@@ -139,15 +137,19 @@ print(gdbt.best_params_)
 # gdbt = GradientBoostingRegressor(learning_rate=0.05, n_estimators=60,max_depth=13, min_samples_leaf =60, min_samples_split =800, max_features=13, subsample=0.9, random_state=10)
 # gdbt.fit(train_X,train_y)
 # invert scaling for forecast
+preds_train = gdbt.predict(train_X)
+print("模型打分情况：", metrics.r2_score(train_y, preds_train))
+
 yhat = gdbt.predict(test_X)
+print("预测值",yhat)
 yhat=yhat.reshape(len(yhat),1)
-# inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
-inv_yhat = scaler.inverse_transform(yhat)
+inv_yhat = concatenate((yhat, test_X[:, -4:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
 inv_yhat = inv_yhat[:, 0]
 # invert scaling for actual
 test_y = test_y.reshape((len(test_y), 1))
-# inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
-inv_y = scaler.inverse_transform(test_y)
+inv_y = concatenate((test_y, test_X[:, -4:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
 inv_y = inv_y[:, 0]
 # calculate RMSE
 rmse = mean_absolute_percentage_error(inv_y, inv_yhat)

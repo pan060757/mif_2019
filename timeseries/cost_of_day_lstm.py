@@ -67,8 +67,9 @@ def fit_lstm(train, batch_size, nb_epoch, neurons):
 # load dataset
 ####读入介入星期特征以及月份特征的数据
 data_input= read_csv('dataset/new_cost_of_month_weekday.csv')
-values=data_input[['group_fees','weekday','month','season','weekday_or_not','holiday_or_not']]
+data_input = data_input[['weekday', 'month', 'season', 'weekday_or_not', 'holiday_or_not','h_count','h_groupfees','m_count','m_groupfees','group_fees' ]]
 # ensure all data is float
+values = data_input.astype('float32')
 values = values.astype('float32')
 
 
@@ -89,14 +90,19 @@ holiday_or_dummy=pd.get_dummies(values.holiday_or_not,prefix='holiday_or_dummy')
 values=values.join(holiday_or_dummy)
 
 ######剔除原始的特征
-values=values.drop(['month','weekday','season','weekday_or_not','holiday_or_not'],1)
+values = values.drop(
+    ['group_fees', 'month', 'weekday', 'season', 'weekday_or_not', 'holiday_or_not', 'h_count', 'h_groupfees',
+     'm_count', 'm_groupfees'], 1)
+values = values.join(
+    [data_input['h_count'], data_input['h_groupfees'], data_input['m_count'], data_input['m_groupfees'],
+     data_input['group_fees']])
 
 # normalize features
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 # specify the number of lag hours
 n_hours = 8
-n_features = 28
+n_features = 32
 # frame as supervised learning
 reframed = series_to_supervised(scaled, n_hours, 1)
 print(reframed)
@@ -110,8 +116,8 @@ train = values[:n_train_hours, :]
 test = values[n_train_hours:-30, :]
 # split into input and outputs
 n_obs = n_hours * n_features
-train_X, train_y = train[:, :n_obs], train[:, -n_features]
-test_X, test_y = test[:, :n_obs], test[:, -n_features]
+train_X, train_y = train[:, :n_obs], train[:, -1]
+test_X, test_y = test[:, :n_obs], test[:, -1]
 print(train_X.shape, len(train_X), train_y.shape)
 # reshape input to be 3D [samples, timesteps, features]
 train_X = train_X.reshape((train_X.shape[0], n_hours, n_features))
@@ -126,7 +132,7 @@ print(train_X.shape, train_y.shape, test_X.shape, test_y.shape)
 ###design network
 # for r in range(repeats):
 model = Sequential()
-model.add(LSTM(12, input_shape=(train_X.shape[1], train_X.shape[2])))
+model.add(LSTM(8, input_shape=(train_X.shape[1], train_X.shape[2])))
 model.add(Dense(1))
 model.compile(loss='mae', optimizer='adam')
 print(model.summary())
@@ -143,14 +149,14 @@ pyplot.show()
 yhat = model.predict(test_X)
 test_X = test_X.reshape((test_X.shape[0], n_hours * n_features))
 # invert scaling for forecast
-inv_yhat = concatenate((yhat, test_X[:, -27:]), axis=1)
+inv_yhat = concatenate((test_X[:, -31:],yhat), axis=1)
 inv_yhat = scaler.inverse_transform(inv_yhat)
-inv_yhat = inv_yhat[:, 0]
+inv_yhat = inv_yhat[:, -1]
 # invert scaling for actual
 test_y = test_y.reshape((len(test_y), 1))
-inv_y = concatenate((test_y, test_X[:, -27:]), axis=1)
+inv_y = concatenate((test_X[:, -31:],test_y), axis=1)
 inv_y = scaler.inverse_transform(inv_y)
-inv_y = inv_y[:, 0]
+inv_y = inv_y[:, -1]
 # calculate RMSE
 rmse = mean_absolute_percentage_error(inv_y, inv_yhat)
 ####将结果写入文件

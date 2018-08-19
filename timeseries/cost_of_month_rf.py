@@ -105,7 +105,7 @@ print(train_X.shape, len(train_X), train_y.shape)
 #####RandomForest
 rf=RandomForestRegressor()
 parameters = {'n_estimators': [100,200,300,400,500]}
-grid_search = GridSearchCV(estimator=rf,param_grid=parameters, cv=10)
+grid_search = GridSearchCV(estimator=rf,param_grid=parameters, cv=5)
 grid_search.fit(train_X,train_y)
 print("Best score: %0.3f" % grid_search.best_score_)
 print("Best parameters set:")

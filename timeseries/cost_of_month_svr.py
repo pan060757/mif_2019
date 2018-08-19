@@ -6,6 +6,7 @@ from pandas import DataFrame
 from pandas import concat
 import pandas as pd
 import numpy as np
+from sklearn import metrics
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import KFold
@@ -111,6 +112,12 @@ svr = GridSearchCV(SVR(kernel='rbf'), param_grid=param_grid, cv=cv)
 # print(svr.best_params_)
 ##记录训练时间
 svr.fit(train_X,train_y) ###拟合模型
+preds_train = svr.predict(train_X)
+print("模型打分情况：", metrics.r2_score(train_y, preds_train))
+pyplot.plot(train_y, label='true_value', color='red')
+pyplot.plot(preds_train, label='pre_value', color='blue')
+pyplot.show()
+
 yhat=svr.predict(test_X)
 
 # invert scaling for forecast

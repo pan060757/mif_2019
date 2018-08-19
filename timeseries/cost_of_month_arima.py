@@ -1,4 +1,4 @@
-from pyramid.arima import auto_arima
+from pyramid.arima import auto_arima, ARIMA
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot
@@ -34,27 +34,27 @@ data=data_input['group_fees']
 size=96
 train=data[0:size]    ##训练集
 test=data[size:]      ##测试集
-# stepwise_fit = auto_arima(train, start_p=1, start_q=1, max_p=3, max_q=3, m=12,
-#                           start_P=0, seasonal=True, d=1, D=1, trace=True,
-#                           error_action='ignore',  # don't want to know if an order does not work
-#                           suppress_warnings=True,  # don't want convergence warnings
-#                           stepwise=True)  # set to stepwise
-# print(stepwise_fit.summary())
-#
-# #####预测未来几期的值
-# pre_value = stepwise_fit.predict(n_periods=len(test))
-# print(pre_value)
-# for i in range(1,len(pre_value)):
-#     print('预测值:%.3f'% pre_value[i])
-#
-# test_mae = mean_absolute_percentage_error(test, pre_value)
-# print('Mean Absolute Percentage Error On Test Set: %.3f' % test_mae)
-# error_rate=error_rate_computed(test, pre_value)
-# print("测试误差率:",error_rate)
-# pyplot.plot(train)
-# pyplot.plot(test)
-# pyplot.plot(pre_value, color='red')
-# pyplot.show()
+stepwise_fit = auto_arima(train, start_p=1, start_q=1, max_p=3, max_q=3, m=12,
+                          start_P=0, seasonal=True, d=1, D=1, trace=True,
+                          error_action='ignore',  # don't want to know if an order does not work
+                          suppress_warnings=True,  # don't want convergence warnings
+                          stepwise=True)  # set to stepwise
+print(stepwise_fit.summary())
+
+####预测未来几期的值
+pre_value = stepwise_fit.predict(n_periods=len(test))
+print(pre_value)
+for i in range(1,len(pre_value)):
+    print('预测值:%.3f'% pre_value[i])
+
+test_mae = mean_absolute_percentage_error(test, pre_value)
+print('Mean Absolute Percentage Error On Test Set: %.3f' % test_mae)
+error_rate=error_rate_computed(test, pre_value)
+print("测试误差率:",error_rate)
+pyplot.plot(train)
+pyplot.plot(test)
+pyplot.plot(pre_value, color='red')
+pyplot.show()
 #
 #
 # #####更新模型
@@ -63,11 +63,11 @@ test=data[size:]      ##测试集
 # updated_model = stepwise_fit.fit(updated_data)
 # print(updated_model.summary())
 
-# model=SARIMAX(train,order=(0,1,1),seasonal_order=(0,1,2,12)).fit()
+# model=ARIMA(order=(0,1,1),seasonal_order=(0,1,2,12)).fit(y=train)
 # pre_value=model.predict(len(test))
 # for i in range(1,len(pre_value)):
 #     print('预测值:%.3f'% pre_value[i])
-#
+# #
 # test_mae = mean_absolute_percentage_error(test, pre_value)
 # print('Mean Absolute Percentage Error On Test Set: %.3f' % test_mae)
 # error_rate=error_rate_computed(test, pre_value)
@@ -78,15 +78,15 @@ test=data[size:]      ##测试集
 # pyplot.show()
 
 ####HoltWinter
-model=ExponentialSmoothing(train).fit(smoothing_level=1,smoothing_slope=0.3,smoothing_seasonal=0.4)
-pre_value=model.forecast(len(test))
-print('预测值', pre_value)
-
-test_mae = mean_absolute_percentage_error(test, pre_value)
-print('Mean Absolute Percentage Error On Test Set: %.3f' % test_mae)
-error_rate=error_rate_computed(test, pre_value)
-print("测试误差率:",error_rate)
-pyplot.plot(train)
-pyplot.plot(test)
-pyplot.plot(pre_value, color='red')
-pyplot.show()
+# model=ExponentialSmoothing(train).fit(smoothing_level=1,smoothing_slope=0.3,smoothing_seasonal=0.4)
+# pre_value=model.forecast(len(test))
+# print('预测值', pre_value)
+#
+# test_mae = mean_absolute_percentage_error(test, pre_value)
+# print('Mean Absolute Percentage Error On Test Set: %.3f' % test_mae)
+# error_rate=error_rate_computed(test, pre_value)
+# print("测试误差率:",error_rate)
+# pyplot.plot(train)
+# pyplot.plot(test)
+# pyplot.plot(pre_value, color='red')
+# pyplot.show()
